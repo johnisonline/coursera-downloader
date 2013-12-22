@@ -1,10 +1,11 @@
+#!/usr/bin/ruby
+
 require "mechanize"
 require "mechanize/http/content_disposition_parser"
 require "uri"
 require 'net/https'
-require 'cgi'
 require 'nokogiri'
-require 'pry'
+require_relative 'password.rb'
 
 class CourseraSession
 
@@ -228,81 +229,35 @@ class CourseraResourceDownloader
 
 end
 
+include Password
 
-if ARGV.size != 3
-  puts "coursera-downloader.rb <username> <password> <course>"
-  exit 1
+def prompt(message, hide = false)
+  while true
+    if hide
+      result = ask(message)
+    else
+      print message
+      result = gets.strip
+    end
+    break unless result == ''
+  end
+  result
 end
 
-session = CourseraSession.new *ARGV
 
+puts "------ Coursera Resource Downloader ------"
+puts "\nProvide your username and password for Coursera. (The same values that you would enter at: https://accounts.coursera.org/signin)"
+username = prompt("Username: ")
+password = prompt("Password: ", true)
+
+puts "\nProvide the \"URL\" name of the course whose resources you are wanting to download. \
+For example, if the URL for the class home page is 'https://class.coursera.org/ml-003/class' \
+then you would answer with 'ml-003' (without quotes)."
+coursename = prompt("Course (URL) Name: ")
+
+#Prompt for directory
+
+session = CourseraSession.new username, password, coursename
 downloader = CourseraResourceDownloader.new session
-
 downloader.download
 
-=begin
-agent = Mechanize.new
-
-session.cookies.each do |key, val|
-  cookie = Mechanize::Cookie.new(key.to_s, val.to_s)
-  cookie.domain = "class.coursera.org"
-  cookie.path = "/"
-  agent.cookie_jar.add(cookie)
-end
-
-# Download all files to the current directory
-session.get_resource_links.each do |link|
-  unless (link =~ URI::regexp).nil?
-    uri = link
-    if (uri =~ /\.mp4/) || (uri =~ /srt/) || (uri =~ /\.pdf/) || (uri =~ /\.pptx/)
-      begin
-        head = agent.head(uri)
-      rescue Mechanize::ResponseCodeError => exception
-        if exception.response_code == '403'
-          filename = URI.decode(exception.page.filename).gsub(/.*filename=\"(.*)\"+?.*/, '\1')
-#        elsif exception.response_code == '404'
-#          $stderr.puts "Page not found: #{uri}"
-#          next
-        else
-          raise exception # Some other error, re-raise
-        end
-      else
-        # First try to access direct the content-disposition header, because mechanize
-        # split the file at "/" and "\" and only use the last part. So we get trouble
-        # with "/" in filename.
-        if not head.response["Content-Disposition"].nil?
-          content_disposition = Mechanize::HTTP::ContentDispositionParser.parse head.response["Content-Disposition"]
-          filename = content_disposition.filename if content_disposition
-        end
-
-        puts "Head filename: #{head.filename}"
-
-        # If we have no file found in the content disposition take the head filename
-        filename ||= head.filename
-        filename = URI.decode(filename.gsub(/http.*\/\//,""))
-      end
-
-      # Replace unwanted characters from the filename
-      filename = filename.gsub(":","").gsub("_","").gsub("/","_").gsub('?', '').gsub("'", '').gsub('\\', '')
-
-      if File.exists?(filename)
-        p "Skipping #{filename} as it already exists"
-      else
-        p "Downloading #{uri} to #{filename}..."
-        begin
-          gotten = agent.get(uri)
-          gotten.save(filename)
-          p "Finished"
-        rescue Mechanize::ResponseCodeError => exception
-          if exception.response_code == '403'
-            p "Failed to download #{filename} for #{exception}"
-          else
-            raise exception # Some other error, re-raise
-          end
-        end
-      end
-    end
-  end
-end
-
-=end
