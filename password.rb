@@ -28,7 +28,7 @@
 # Ask for a password from CLI, 
 # if it exists.
 
-# Downloaded from https://gist.github.com/steakknife/2040373#file-password-rb
+# Forked from https://gist.github.com/steakknife/2040373#file-password-rb
 
 module Password
 
