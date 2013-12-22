@@ -15,7 +15,7 @@ class CourseraSession
 
   def CourseraSession.parse_value(key, string)
     regexp = Regexp.new("#{key}=([^;]+)")
-    string.match(/CAUTH=([^;]+)/)[1]
+    string.match(regexp)[1]
   end
 
   def initialize username, password, course_name
