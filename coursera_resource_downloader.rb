@@ -41,6 +41,7 @@ class CourseraResourceDownloader
 
       if File.exists?(destination = File.join(@dest, filename))
         puts "#{filename} already exists. Skipping."
+        next
       end
 
       puts "Downloading '#{link}'' to '#{filename}' ..."
