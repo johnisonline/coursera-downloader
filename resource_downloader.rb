@@ -1,25 +1,25 @@
 require "mechanize"
 require "mechanize/http/content_disposition_parser"
-require 'nokogiri'
 
-class CourseraResourceDownloader
+class ResourceDownloader
 
   @@default_extensions = ['.mp4', '.srt', '.pdf', '.pptx', '.ppt']
   @@default_filename_subs = { ':' => '', '_' => '', '/' => '_', '?' => '', "'" => '', '\\' => ''}
 
-  def CourseraResourceDownloader.default_extensions
+  def ResourceDownloader.default_extensions
     @@default_extensions
   end
 
-  def CourseraResourceDownloader.default_filename_subs
+  def ResourceDownloader.default_filename_subs
     @@default_extensions
   end
 
-  def initialize session, options = {}
+  def initialize cookies, resource_links, options = {}
     options = { dest_folder: Dir.pwd,
                 extensions: @@default_extensions,
                 filename_subs: {} }.merge(options)
-    @session = session
+    @cookies = cookies
+    @resource_links = resource_links
 
     @dest = options[:dest_folder]
     unless [:exists?, :directory?].all? {|method| File.send(method, @dest)}
@@ -33,8 +33,7 @@ class CourseraResourceDownloader
   def download
     agent = create_agent
 
-    links = @session.get_resource_links
-    links.each do |link|
+    @resource_links.each do |link|
       next unless URI.regexp =~ link
       filename = substitute_filename(get_filename(agent, link))
       next unless valid_extension? filename
@@ -61,9 +60,11 @@ class CourseraResourceDownloader
     end
   end
 
+private
+
   def create_agent
     agent = Mechanize.new
-    @session.cookies.each do |key, val|
+    @cookies.each do |key, val|
       cookie = Mechanize::Cookie.new(key.to_s, val.to_s)
       cookie.domain = "class.coursera.org"
       cookie.path = "/"

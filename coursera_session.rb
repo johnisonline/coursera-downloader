@@ -1,11 +1,12 @@
 require "uri"
 require 'net/https'
+require 'nokogiri'
 
 class CourseraSession
 
   @@base_course_uri = 'https://class.coursera.org/%s'
   @@login_uri = 'https://accounts.coursera.org/api/v1/login'
-  @@course_content_path = '/lecture/index'
+  @@course_content_path = '/lecture'
 
   def CourseraSession.parse_value(key, string)
     regexp = Regexp.new("#{key}=([^;]+)")
@@ -26,6 +27,33 @@ class CourseraSession
     @course_content_uri ||= URI((@@base_course_uri % @course_name) + @@course_content_path)
   end
 
+  def cookies
+    unless @cookies
+      @cookies = { maestro_login_flag: 1, CAUTH: cauth }
+    end
+    @cookies
+  end
+
+  def resource_links
+    #not cached
+    page = Nokogiri::HTML(course_content)
+    links = []
+
+    page.css('div.course-lecture-item-resource').each do |div|
+       div.css('a').each do |link|
+        links << link.attributes['href'].value
+       end
+    end
+    links
+  end
+
+  # The password should not show up in debug
+  def inspect
+    str = super
+    str.gsub(/\@password\=\"[^\"]+\"(, )?/, '')
+  end
+
+private
 
   def csrf_token
     unless @csrf_token
@@ -67,13 +95,6 @@ class CourseraSession
     @cauth
   end
 
-  def cookies
-    unless @cookies
-      @cookies = { maestro_login_flag: 1, CAUTH: cauth }
-    end
-    @cookies
-  end
-
   def cookie_string
     unless @cookie_string
       result = ''
@@ -101,16 +122,4 @@ class CourseraSession
     end
   end
 
-  def get_resource_links
-    #not cached
-    page = Nokogiri::HTML(course_content)
-    links = []
-
-    page.css('div.course-lecture-item-resource').each do |div|
-       div.css('a').each do |link|
-        links << link.attributes['href'].value
-       end
-    end
-    links
-  end
 end

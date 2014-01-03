@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 require_relative 'coursera_session.rb'
-require_relative 'coursera_resource_downloader.rb'
+require_relative 'resource_downloader.rb'
 require_relative 'password.rb'
 
 include Password
@@ -31,6 +31,6 @@ coursename = prompt("Course (URL) Name: ")
 #Prompt for directory
 
 session = CourseraSession.new username, password, coursename
-downloader = CourseraResourceDownloader.new session
+downloader = ResourceDownloader.new session.cookies, session.resource_links
 downloader.download
 
