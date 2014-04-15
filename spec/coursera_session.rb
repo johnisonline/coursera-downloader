@@ -46,7 +46,6 @@ COURSES.each do |course|
 			@session.inspect.index('password').should be_nil
 		end
 
-
 		it 'should return authorization cookies' do
 			@session.should respond_to(:cookies)
 			@session.cookies.should respond_to(:[])
