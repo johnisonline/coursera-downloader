@@ -44,6 +44,7 @@ class CourseraSession
         links << link.attributes['href'].value
        end
     end
+    links.delete_if {|link| link =~ /^forum:/ }
     links
   end
 
@@ -60,7 +61,7 @@ private
       http = Net::HTTP.new(course_uri.host, course_uri.port)
       http.use_ssl = (course_uri.scheme == 'https')
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      
+
       response = http.get(course_uri.path)
       raise "Unable to connect to course" unless response["Set-Cookie"]
       @csrf_token = response["Set-Cookie"].split(";")[0].split("=")[1]
@@ -72,8 +73,8 @@ private
     unless @cauth
       uri = URI(@@login_uri)
 
-      Net::HTTP.start(uri.host, uri.port, 
-                      :use_ssl => (uri.scheme == 'https'), 
+      Net::HTTP.start(uri.host, uri.port,
+                      :use_ssl => (uri.scheme == 'https'),
                       :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
 
         request = Net::HTTP::Post.new( uri.path,
@@ -109,7 +110,7 @@ private
   def course_content
     #not cached
     uri = URI( course_content_uri )
-    Net::HTTP.start(uri.host, uri.port, 
+    Net::HTTP.start(uri.host, uri.port,
                     :use_ssl => (uri.scheme == 'https'),
                     :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
       request = Net::HTTP::Get.new(

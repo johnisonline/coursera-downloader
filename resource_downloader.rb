@@ -4,7 +4,7 @@ require "mechanize/http/content_disposition_parser"
 class ResourceDownloader
 
   @@default_extensions = ['.mp4', '.srt', '.pdf', '.pptx', '.ppt']
-  @@default_filename_subs = { ':' => '', '_' => '', '/' => '_', '?' => '', "'" => '', '\\' => ''}
+  @@default_filename_subs = { ':' => '', '_' => '', '/' => '_', '?' => '', "'" => '', '\\' => '', '"' => '', "'" => '', "&" => "and"}
 
   def ResourceDownloader.default_extensions
     @@default_extensions
@@ -86,7 +86,7 @@ private
       # First try to access direct the content-disposition header, because mechanize
       # split the file at "/" and "\" and only use the last part. So we get trouble
       # with "/" in filename.
-      if head.response["Content-Disposition"] && 
+      if head.response["Content-Disposition"] &&
         (content_disposition = Mechanize::HTTP::ContentDispositionParser.parse(head.response["Content-Disposition"]))
         filename = URI.decode(content_disposition.filename.gsub(/http.*\/\//,""))
       else
